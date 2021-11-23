@@ -104,116 +104,6 @@ def drawframe(screen):
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 545))
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 655))
 
-
-class Percent():
-
-    def __init__(self, p1, p2, p3, p4, p5, p6):
-        self.__p1 = p1
-        self.__p2 = p2
-        self.__p3 = p3
-        self.__p4 = p4
-        self.__p5 = p5
-        self.__p6 = p6
-
-    def changeValue(self, up, name, value):
-        if (name == "p1"):
-            if (up == False):
-                self.set_p1(value - 1)
-            else:
-                self.set_p1(value + 1)
-        if (name == "p2"):
-            if (up == False):
-                self.set_p2(value - 1)
-            else:
-                self.set_p2(value + 1)
-        if (name == "p3"):
-            if (up == False):
-                self.set_p3(value - 1)
-            else:
-                self.set_p3(value + 1)
-        if (name == "p4"):
-            if (up == False):
-                self.set_p4(value - 1)
-            else:
-                self.set_p4(value + 1)
-        if (name == "p5"):
-            if (up == False):
-                self.set_p5(value - 1)
-            else:
-                self.set_p5(value + 1)
-        if (name == "p6"):
-            if (up == False):
-                self.set_p6(value - 1)
-            else:
-                self.set_p6(value + 1)
-
-    def get_p1(self):
-        return self.__p1
-
-    def set_p1(self, p1):
-        if (p1 < 0):
-            self.__p1 = 0
-        elif (p1 > 100):
-            self.__p1 = 100
-        else:
-            self.__p1 = p1
-
-    def get_p2(self):
-        return self.__p2
-
-    def set_p2(self, p2):
-        if (p2 < 0):
-            self.__p2 = 0
-        elif (p2 > 100):
-            self.__p2 = 100
-        else:
-            self.__p2 = p2
-
-    def get_p3(self):
-        return self.__p3
-
-    def set_p3(self, p3):
-        if (p3 < 0):
-            self.__p3 = 0
-        elif (p3 > 100):
-            self.__p3 = 100
-        else:
-            self.__p3 = p3
-
-    def get_p4(self):
-        return self.__p4
-
-    def set_p4(self, p4):
-        if (p4 < 0):
-            self.__p4 = 0
-        elif (p4 > 100):
-            self.__p4 = 100
-        else:
-            self.__p4 = p4
-
-    def get_p5(self):
-        return self.__p5
-
-    def set_p5(self, p5):
-        if (p5 < 0):
-            self.__p5 = 0
-        elif (p5 > 100):
-            self.__p5 = 100
-        else:
-            self.__p5 = p5
-
-    def get_p6(self):
-        return self.__p6
-
-    def set_p6(self, p6):
-        if (p6 < 0):
-            self.__p6 = 0
-        elif (p6 > 100):
-            self.__p6 = 100
-        else:
-            self.__p6 = p6
-
-
 def RGB_to_hex(RGB):
     RGB = [int(x) for x in RGB]
     return "#" + "".join(["0{0:x}".format(v) if v < 16 else
@@ -290,55 +180,67 @@ def DrawTextForGauge(screen,label,position,positionMax):
 
 class Rect() :
     @staticmethod
-    def DrawAllRectAndFill(surface, percentOne,percentTwo,percentThree,percentFour,percentFive,percentSix):
+    def DrawAllRectAndFill(surface, vcurrentrpm,voiltemp,voilpressure,vboostpressure,vairflowtemp,vexhausttemp):
         positionFirst = 51
         positionSecond = 161
         positionThird = 271
         positionFourth = 381
         positionFifth = 491
         positionSixth = 601
-        color = sdl2.ext.Color(255, 255, 255)
-        x1, y1 = 160, 50
-        x2, y2 = 940, 50
-        x3, y3 = 160, 110
-        x4, y4 = 940, 110
-        nb = 6
-        shift = 0
-        for i in range(nb):
-            sdl2.ext.line(surface, color, (x1, y1 + shift, x2, y2 + shift))
-            sdl2.ext.line(surface, color, (x3, y3 + shift, x4, y4 + shift))
-            sdl2.ext.line(surface, color, (x1, y1 + shift, x3, y3 + shift))
-            sdl2.ext.line(surface, color, (x2, y2 + shift, x4, y4 + shift))
-            shift += 110
-        mGD = (linear_gradient(start_hex="#ffff00"))
         view = sdl2.ext.PixelView(screen)
         cpt = 0
-        for k in range(int(780/100*percentOne)) :
+        base = 51
+        end = 160
+        for n in range(2):
+            for k in range(6):
+                for j in range((60)):
+                    view[base+cpt][end] = sdl2.ext.Color(255,255,255)
+                    cpt += 1
+                cpt = 0
+                base += 110
+            cpt = 0
+            base = 51
+            end = 940
+        index = 50
+        for i in range(6):
+            for k in range(781):
+                view[index][160+k] = sdl2.ext.Color(255, 255, 255)
+            index += 110
+
+        index = 111
+
+        for i in range(6) :
+            for k in range(781):
+                view[index][160+k] = sdl2.ext.Color(255, 255, 255)
+            index+=110
+        mGD = (linear_gradient(start_hex="#ffff00"))
+        cpt = 0
+        for k in range(int(voiltemp*780/100)) :
             for j in range((60)):
                 view[positionFirst + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
         cpt = 0
-        for k in range(int(780 / 100 * percentTwo)):
+        for k in range(int(voilpressure*780/7)):
             for j in range((60)):
                 view[positionSecond + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
         cpt = 0
-        for k in range(int(780 / 100 * percentThree)):
+        for k in range(int(vboostpressure)):
             for j in range((60)):
                 view[positionThird + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
         cpt = 0
-        for k in range(int(780 / 100 * percentFour)):
+        for k in range(int(vairflowtemp)):
             for j in range((60)):
                 view[positionFourth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
         cpt = 0
-        for k in range(int(780 / 100 * percentFive)):
+        for k in range(int(vcurrentrpm)):
             for j in range((60)):
                 view[positionFifth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
         cpt = 0
-        for k in range(int(780 / 100 * percentSix)):
+        for k in range(int(vexhausttemp)):
             for j in range((60)):
                 view[positionSixth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
             cpt += 1
@@ -355,7 +257,7 @@ def handleevent():
                 y = SCREEN_HEIGHT.contents.value / 2 - OILTemp.contents.h / 2
     return True
 
-def refreshValues(percent):
+def refreshValues():
     global connection
     global vcurrentrpm
     global voiltemp
@@ -370,13 +272,11 @@ def refreshValues(percent):
     #    print("just read value  %f" % (vcurrentrpm))
     #else:
     #    print("couldn't read current value")
-    voiltemp = 8
-    voilpressure = 54
+    voiltemp = 60
+    voilpressure = 4
     vboostpressure = 5
     vairflowtemp = 47
     vexhausttemp = 14
-
-    percent.set_p5(vcurrentrpm / 7000 * 100)
 
 SDL_Init(SDL_INIT_VIDEO)
 #connection = obd.OBD(fast=False, check_voltage=False)
@@ -440,15 +340,18 @@ v = 200
 screen = SDL_GetWindowSurface(window)
 
 def run(screen):
-    percent = Percent(p1=100, p2=75, p3=50, p4=25, p5=10, p6=5)
-
     startstamp = SDL_GetTicks()
     startvtimestamp = startstamp
     while True:
+        global vcurrentrpm
+        global voiltemp
+        global voilpressure
+        global vboostpressure
+        global vairflowtemp
+        global vexhausttemp
         now = SDL_GetTicks()
-
         if now - startstamp >= 1000:
-            refreshValues(percent)
+            refreshValues()
             startstamp = now
 
         r = handleevent()
@@ -456,12 +359,11 @@ def run(screen):
             break
         if now - startvtimestamp >= 1000:
             sdl2.ext.fill(screen, sdl2.ext.Color(0, 0, 0))
-            Rect().DrawAllRectAndFill(screen, percent.get_p1(),percent.get_p2(),percent.get_p3(),percent.get_p4(),percent.get_p5(),percent.get_p6())
+            Rect().DrawAllRectAndFill(screen, vcurrentrpm,voiltemp,voilpressure,vboostpressure,vairflowtemp,vexhausttemp)
             drawframe(screen)
             SDL_UpdateWindowSurface(window)
             startvtimestamp = now
             print("redrawn screen")
-
 run(screen)
 SDL_DestroyWindow(window)
 SDL_Quit()
