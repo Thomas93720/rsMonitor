@@ -15,7 +15,7 @@ from collections import defaultdict
 vcurrentrpm = 0
 voiltemp = 0
 voilpressure = 0
-vFuelLevel = 0
+vFuelLevel = 13
 vEngineLoad = 0
 vThrottlePos = 0
 
@@ -263,7 +263,7 @@ def refreshValues():
         print("couldn't read current value")
     FuelLevel = connection.query(obd.commands.FUEL_LEVEL, True)
     if FuelLevel.value is not None:
-        if (vFuelLevel != FuelLevel.value.magnitude):
+        if (vFuelLevel != int(13)):
             vFuelLevel = FuelLevel.value.magnitude
             myJauge4.setWidth(int(vFuelLevel * 780 / 60))
             myJauge4.setDirtyTrue()
