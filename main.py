@@ -1,8 +1,7 @@
-
 #! /usr/bin/python3
 
 import os
-#import obd
+import obd
 from sys import exit
 from ctypes import c_long, pointer
 import sdl2.ext
@@ -10,14 +9,15 @@ import sys
 import sdl2
 from sdl2 import *
 from sdl2.sdlttf import *
+import random
+from collections import defaultdict
 
 vcurrentrpm = 0
 voiltemp = 0
 voilpressure = 0
-vboostpressure = 0
-vairflowtemp = 0
-vexhausttemp = 0
-
+vFuelLevel = 0
+vEngineLoad = 0
+vThrottlePos = 0
 
 def renderText(message, fontFile, color, fontSize):
     # Open the font
@@ -59,43 +59,19 @@ def renderText(message, fontFile, color, fontSize):
 
 def drawframe(screen):
     global vcurrentrpm
-    global voiltemp
-    global voilpressure
-    global vboostpressure
-    global vairflowtemp
-    global vexhausttemp
-
-    myStr = str(voiltemp)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 65))
-
-    myStr = str(voilpressure)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 175))
-
-    myStr = str(vboostpressure)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 285))
-
-    myStr = str(vairflowtemp)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 395))
-
-    myStr = str(vcurrentrpm)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 505))
-
-    myStr = str(vexhausttemp)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(540 + (11 * i), 615))
+    global vSpeed
+    global vcoolantTemp
+    global vFuelLevel
+    global vMaf
+    global vcoolantTemp
 
     # Valeurs oil etc
     surface.SDL_BlitSurface(OILTemp, None, screen, SDL_Rect(58, 62))
     surface.SDL_BlitSurface(OilPressure, None, screen, SDL_Rect(40, 172))
-    surface.SDL_BlitSurface(BoostPressure, None, screen, SDL_Rect(20, 282))
-    surface.SDL_BlitSurface(AirflowTemp, None, screen, SDL_Rect(35, 392))
+    surface.SDL_BlitSurface(FuelLevel, None, screen, SDL_Rect(20, 282))
+    surface.SDL_BlitSurface(EngineLoad, None, screen, SDL_Rect(35, 392))
     surface.SDL_BlitSurface(CurrentRPM, None, screen, SDL_Rect(35, 502))
-    surface.SDL_BlitSurface(ExhaustTemp, None, screen, SDL_Rect(30, 612))
+    surface.SDL_BlitSurface(ThrottlePos, None, screen, SDL_Rect(30, 612))
     # MAX
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 105))
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 215))
@@ -103,6 +79,64 @@ def drawframe(screen):
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 435))
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 545))
     surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, 655))
+
+def drawNumber(screen) :
+    global vcurrentrpm
+    global voiltemp
+    global voilpressure
+    global vFuelLevel
+    global vEngineLoad
+    global vThrottlePos
+    value = 65
+    for n in range(6):
+        surface.SDL_FillRect(screen, SDL_Rect(945, value, 54, 35), 0xFF000000)
+        value += 110
+    myStr = str(int(voiltemp))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 65))
+    myStr = str(int(voilpressure / 100))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 175))
+    myStr = str(int(vFuelLevel))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 285))
+    myStr = str(int(vEngineLoad))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 395))
+    myStr = str(int(vcurrentrpm))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 505))
+    myStr = str(int(vThrottlePos * 100))
+    for i in range(len(myStr)):
+        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(945 + (11 * i), 615))
+
+def drawWhiteSquare() :
+    view = sdl2.ext.PixelView(screen)
+    cpt = 0
+    base = 51
+    end = 160
+    for n in range(2):
+        for k in range(6):
+            for j in range((60)):
+                view[base + cpt][end] = sdl2.ext.Color(255, 255, 255)
+                cpt += 1
+            cpt = 0
+            base += 110
+        cpt = 0
+        base = 51
+        end = 940
+    index = 50
+    for i in range(6):
+        for k in range(781):
+            view[index][160 + k] = sdl2.ext.Color(255, 255, 255)
+        index += 110
+
+    index = 111
+
+    for i in range(6):
+        for k in range(781):
+            view[index][160 + k] = sdl2.ext.Color(255, 255, 255)
+        index += 110
 
 def RGB_to_hex(RGB):
     RGB = [int(x) for x in RGB]
@@ -130,9 +164,17 @@ def linear_gradient(start_hex, finish_hex="#FF0000", n=780):
         RGB_list.append(curr_vector)
     return color_dict(RGB_list)
 
+def covertRGBToTuple() :
+    toConvert = linear_gradient(start_hex="#ffff00")
+    myDictRGB = defaultdict(list)
+    for i in range(780):
+        myDictRGB[i] = (toConvert["r"][i],toConvert["g"][i],toConvert["b"][i])
+    return myDictRGB
+
+mGD = covertRGBToTuple()
+
 class Gauge :
-    def __init__(self, label, w, h, min, max,position,positionMax):
-        self.__label = label
+    def __init__(self, w, h, min, max,position,positionMax):
         self.__w = w
         self.__h = h
         self.__min = min
@@ -143,107 +185,33 @@ class Gauge :
 
     def update(self):
         "redessine la gauge et passe dirty false"
-        mGD = (linear_gradient(start_hex="#ffff00"))
         view = sdl2.ext.PixelView(screen)
         cpt = 0
+        surface.SDL_FillRect(screen, SDL_Rect(161, self.__position, 779, 60), 0xFF000000)
         for k in range(self.__w):
             for j in range((self.__h)):
-                view[self.__position + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
+                r, g, b = mGD[cpt]
+                view[self.__position + j][self.__positionMax + k] = sdl2.ext.Color(r, g, b)
             cpt += 1
-        DrawTextForGauge(screen,self.__label,self.__position,self.__positionMax)
         self.__dirty = False
 
     def draw(self, x, y) :
+        self.__position = x
+        self.__positionMax = y
         if self.__dirty == True :
             self.update()
+            print("DirtyTrue")
         else :
-            mGD = (linear_gradient(start_hex="#ffff00"))
-            view = sdl2.ext.PixelView(screen)
-            cpt = 0
-            for k in range(self.__w) :
-                for j in range((self.__h)):
-                    view[x + j][y + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-                cpt += 1
-            DrawTextForGauge(screen, self.__label, self.__position, self.__positionMax)
+            print("DirtyFalse")
 
-def DrawTextForGauge(screen,label,position,positionMax):
+    def getDirty(self):
+        return self.__dirty
 
-    myStr = str(label)
-    for i in range(len(myStr)):
-        surface.SDL_BlitSurface(digits[myStr[i]], None, screen, SDL_Rect(position))
+    def setDirtyTrue(self):
+        self.__dirty = True
 
-    # Valeurs oil etc
-    surface.SDL_BlitSurface(label, None, screen, SDL_Rect(position))
-    # MAX
-    surface.SDL_BlitSurface(max, None, screen, SDL_Rect(895, positionMax))
-
-
-class Rect() :
-    @staticmethod
-    def DrawAllRectAndFill(surface, vcurrentrpm,voiltemp,voilpressure,vboostpressure,vairflowtemp,vexhausttemp):
-        positionFirst = 51
-        positionSecond = 161
-        positionThird = 271
-        positionFourth = 381
-        positionFifth = 491
-        positionSixth = 601
-        view = sdl2.ext.PixelView(screen)
-        cpt = 0
-        base = 51
-        end = 160
-        for n in range(2):
-            for k in range(6):
-                for j in range((60)):
-                    view[base+cpt][end] = sdl2.ext.Color(255,255,255)
-                    cpt += 1
-                cpt = 0
-                base += 110
-            cpt = 0
-            base = 51
-            end = 940
-        index = 50
-        for i in range(6):
-            for k in range(781):
-                view[index][160+k] = sdl2.ext.Color(255, 255, 255)
-            index += 110
-
-        index = 111
-
-        for i in range(6) :
-            for k in range(781):
-                view[index][160+k] = sdl2.ext.Color(255, 255, 255)
-            index+=110
-        mGD = (linear_gradient(start_hex="#ffff00"))
-        cpt = 0
-        for k in range(int(voiltemp*780/100)) :
-            for j in range((60)):
-                view[positionFirst + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
-        cpt = 0
-        for k in range(int(voilpressure*780/7)):
-            for j in range((60)):
-                view[positionSecond + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
-        cpt = 0
-        for k in range(int(vboostpressure)):
-            for j in range((60)):
-                view[positionThird + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
-        cpt = 0
-        for k in range(int(vairflowtemp)):
-            for j in range((60)):
-                view[positionFourth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
-        cpt = 0
-        for k in range(int(vcurrentrpm)):
-            for j in range((60)):
-                view[positionFifth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
-        cpt = 0
-        for k in range(int(vexhausttemp)):
-            for j in range((60)):
-                view[positionSixth + j][161 + k] = sdl2.ext.Color(mGD["r"][cpt], mGD["g"][cpt], mGD["b"][cpt])
-            cpt += 1
+    def setWidth(self,w):
+        self.__w = w
 
 def handleevent():
     eventH = SDL_Event()
@@ -262,24 +230,67 @@ def refreshValues():
     global vcurrentrpm
     global voiltemp
     global voilpressure
-    global vboostpressure
-    global vairflowtemp
-    global vexhausttemp
+    global vFuelLevel
+    global vEngineLoad
+    global vThrottlePos
 
-    #rpm = connection.query(obd.commands.RPM, True)
-    #if rpm.value is not None:
-    #    vcurrentrpm = rpm.value.magnitude
-    #    print("just read value  %f" % (vcurrentrpm))
-    #else:
-    #    print("couldn't read current value")
-    voiltemp = 60
-    voilpressure = 4
-    vboostpressure = 5
-    vairflowtemp = 47
-    vexhausttemp = 14
+    rpm = connection.query(obd.commands.RPM, True)
+    if rpm.value is not None:
+        if(vcurrentrpm != rpm.value.magnitude):
+            vcurrentrpm = rpm.value.magnitude
+            myJauge.setWidth(int(vcurrentrpm*780/7000))
+            myJauge.setDirtyTrue()
+        print("just read value  %f" % (vcurrentrpm))
+    else:
+        print("couldn't read current value")
+    oiltemp = connection.query(obd.commands.OIL_TEMP, True)
+    if oiltemp.value is not None:
+        if (voiltemp != oiltemp.value.magnitude):
+            voiltemp = oiltemp.value.magnitude
+            myJauge2.setWidth(int(voiltemp*780/150))
+            myJauge2.setDirtyTrue()
+        print("just read value  %f" % (voiltemp))
+    else:
+        print("couldn't read current value")
+    oilpressure = connection.query(obd.commands.FUEL_RAIL_PRESSURE_ABS, True)
+    if oilpressure.value is not None:
+        if (voilpressure != oilpressure.value.magnitude):
+            voilpressure = oilpressure.value.magnitude
+            myJauge3.setWidth(int(voilpressure * 780 / 80000))
+            myJauge3.setDirtyTrue()
+        print("just read value  %f" % (voilpressure))
+    else:
+        print("couldn't read current value")
+    FuelLevel = connection.query(obd.commands.FUEL_LEVEL, True)
+    if FuelLevel.value is not None:
+        if (vFuelLevel != FuelLevel.value.magnitude):
+            vFuelLevel = FuelLevel.value.magnitude
+            myJauge4.setWidth(int(vFuelLevel * 780 / 60))
+            myJauge4.setDirtyTrue()
+        print("just read value  %f" % (vFuelLevel))
+    else:
+        print("couldn't read current value")
+    EngineLoad = connection.query(obd.commands.ENGINE_LOAD, True)
+    if EngineLoad.value is not None:
+        if (vEngineLoad != EngineLoad.value.magnitude):
+            vEngineLoad = EngineLoad.value.magnitude
+            myJauge5.setWidth(int(vEngineLoad * 780 / 100))
+            myJauge5.setDirtyTrue()
+        print("just read value  %f" % (vEngineLoad))
+    else:
+        print("couldn't read current value")
+    ThrottlePos = connection.query(obd.commands.THROTTLE_POS, True)
+    if ThrottlePos.value is not None:
+        if (vThrottlePos != ThrottlePos.value.magnitude):
+            vThrottlePos = ThrottlePos.value.magnitude
+            myJauge6.setWidth(int(vThrottlePos*780/100))
+            myJauge6.setDirtyTrue()
+        print("just read value  %f" % (vThrottlePos))
+    else:
+        print("couldn't read current value")
 
 SDL_Init(SDL_INIT_VIDEO)
-#connection = obd.OBD(fast=False, check_voltage=False)
+connection = obd.OBD(portstr="/dev/ttyUSB0",fast=False, check_voltage=False)
 
 try:
     window = SDL_CreateWindow(
@@ -313,10 +324,10 @@ x = 0
 
 OILTemp = renderText("OIL Temp", fontpath,color, 20)
 OilPressure = renderText("Oil Pressure", fontpath,color, 20)
-BoostPressure = renderText("Boost Pressure", fontpath,color, 20)
-AirflowTemp = renderText("Airflow Temp", fontpath,color, 20)
+FuelLevel = renderText("Fuel Level", fontpath,color, 20)
+EngineLoad = renderText("Engine Load", fontpath,color, 20)
 CurrentRPM = renderText("Current RPM", fontpath,color, 20)
-ExhaustTemp = renderText("Exhaust Temp", fontpath,color, 20)
+ThrottlePos = renderText("Throttle Position", fontpath,color, 20)
 max = renderText("max", fontpath,color, 15)
 
 digits = dict()
@@ -339,29 +350,50 @@ v = 200
 
 screen = SDL_GetWindowSurface(window)
 
+view = sdl2.ext.PixelView(screen)
+view[50][20] = sdl2.ext.Color(0, 255, 0)
+drawWhiteSquare()
+drawframe(screen)
+w, h, min, max, position, positionMax = 0, 60, 200, 300, 51, 161
+myJauge = Gauge(w, h, min, max, position, positionMax)
+myJauge2 = Gauge(w, h, min, max, position, positionMax)
+myJauge3 = Gauge(w, h, min, max, position, positionMax)
+myJauge4 = Gauge(w, h, min, max, position, positionMax)
+myJauge5 = Gauge(w, h, min, max, position, positionMax)
+myJauge6 = Gauge(w, h, min, max, position, positionMax)
+
 def run(screen):
     startstamp = SDL_GetTicks()
     startvtimestamp = startstamp
     while True:
         global vcurrentrpm
-        global voiltemp
-        global voilpressure
-        global vboostpressure
-        global vairflowtemp
-        global vexhausttemp
+        global vSpeed
+        global vcoolantTemp
+        global vFuelLevel
+        global vMaf
+        global vcoolantTemp
         now = SDL_GetTicks()
-        if now - startstamp >= 1000:
+        if now - startstamp >= 1:
             refreshValues()
             startstamp = now
-
         r = handleevent()
         if r is False:
             break
-        if now - startvtimestamp >= 1000:
-            sdl2.ext.fill(screen, sdl2.ext.Color(0, 0, 0))
-            Rect().DrawAllRectAndFill(screen, vcurrentrpm,voiltemp,voilpressure,vboostpressure,vairflowtemp,vexhausttemp)
-            drawframe(screen)
+        if now - startvtimestamp >= 1:
             SDL_UpdateWindowSurface(window)
+            drawNumber(screen)
+            if(myJauge.getDirty()):
+                myJauge.draw(51, 161)
+            if (myJauge2.getDirty()):
+                myJauge2.draw(161, 161)
+            if (myJauge3.getDirty()):
+                myJauge3.draw(271, 161)
+            if (myJauge4.getDirty()):
+                myJauge4.draw(381, 161)
+            if (myJauge5.getDirty()):
+                myJauge5.draw(491, 161)
+            if (myJauge6.getDirty()):
+                myJauge6.draw(601, 161)
             startvtimestamp = now
             print("redrawn screen")
 run(screen)
